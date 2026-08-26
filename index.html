@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sakura Express - 英会話 瞬発力ドリル (A2-B1)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Zen+Maru+Gothic:wght@500;700&display=swap');
+        body {
+            font-family: 'Zen Maru Gothic', 'Plus Jakarta Sans', sans-serif;
+            background-color: #fdf8f9;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(255, 182, 193, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+        .pulse-mic {
+            animation: pulse-red 1.5s infinite;
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 pb-12">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-pink-100 px-4 py-3">
+        <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl text-pink-500">🌸</span>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg text-slate-800 tracking-wide leading-tight">Sakura Express</h1>
+                    <p class="text-[10px] text-pink-500 font-bold">音声入力対応・1日各5問</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 text-xs font-bold text-slate-500">
+                <!-- Auto Speak Toggle -->
+                <button id="toggle-speech" onclick="toggleAutoSpeech()" class="flex items-center space-x-1.5 bg-pink-50 text-pink-600 px-2.5 py-1 rounded-full border border-pink-200 hover:bg-pink-100 transition-all">
+                    <i id="speech-icon" class="fa-solid fa-volume-high"></i>
+                    <span id="speech-text" class="hidden sm:inline">自動音声 ON</span>
+                </button>
+                <span id="streak-counter" class="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full border border-amber-200">
+                    <i class="fa-solid fa-fire text-amber-500 mr-1"></i>0 連続
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 mt-6">
+
+        <!-- Date & Today's Progress -->
+        <div class="bg-white rounded-2xl p-4 mb-6 border border-pink-100 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="text-xs text-slate-400 font-bold block" id="today-date">2026年8月26日(水)</span>
+                <span class="text-sm font-bold text-slate-700">本日の学習ターゲット</span>
+            </div>
+            <div class="text-right">
+                <span class="text-xs text-pink-500 font-bold block">進捗</span>
+                <span id="daily-progress-text" class="text-base font-bold text-pink-600">1 / 5 問目</span>
+            </div>
+        </div>
+
+        <!-- Mode Select Tabs -->
+        <div class="grid grid-cols-2 gap-2 p-1.5 bg-pink-100/50 rounded-2xl mb-6">
+            <button id="tab-flash" onclick="switchMode('flash')" class="py-2.5 text-center rounded-xl font-bold text-sm transition-all bg-white text-pink-600 shadow-sm">
+                <i class="fa-solid fa-bolt mr-1.5"></i> 瞬間英作文
+            </button>
+            <button id="tab-roleplay" onclick="switchMode('roleplay')" class="py-2.5 text-center rounded-xl font-bold text-sm transition-all text-slate-600 hover:text-pink-600">
+                <i class="fa-solid fa-comments mr-1.5"></i> 瞬間レスポンス
+            </button>
+        </div>
+
+        <!-- Category Selector -->
+        <div class="mb-6">
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-2 px-1">シチュエーションを選択 (各5問)</label>
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="setCategory('travel')" id="cat-travel" class="cat-btn border-2 border-pink-400 bg-pink-50 text-pink-700 py-3 rounded-2xl font-bold text-sm flex flex-col items-center justify-center transition-all">
+                    <i class="fa-solid fa-plane text-xl mb-1"></i>
+                    旅行
+                </button>
+                <button onclick="setCategory('shopping')" id="cat-shopping" class="cat-btn border-2 border-transparent bg-white text-slate-600 py-3 rounded-2xl font-bold text-sm flex flex-col items-center justify-center transition-all shadow-sm hover:border-pink-200">
+                    <i class="fa-solid fa-bag-shopping text-xl mb-1"></i>
+                    買い物・カフェ
+                </button>
+                <button onclick="setCategory('smalltalk')" id="cat-smalltalk" class="cat-btn border-2 border-transparent bg-white text-slate-600 py-3 rounded-2xl font-bold text-sm flex flex-col items-center justify-center transition-all shadow-sm hover:border-pink-200">
+                    <i class="fa-solid fa-mug-hot text-xl mb-1"></i>
+                    スモールトーク
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= FLASH CARD MODE ================= -->
+        <section id="mode-flash" class="space-y-4">
+            
+            <!-- Timer & Difficulty -->
+            <div class="flex justify-between items-center text-xs text-slate-500 font-bold px-1">
+                <span>制限時間: <span id="timer-display" class="text-pink-600 text-base">5</span>秒</span>
+                <span id="level-badge" class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Level A2</span>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-white rounded-3xl p-6 border border-pink-100 card-shadow text-center relative overflow-hidden space-y-4">
+                <!-- Progress Bar -->
+                <div class="absolute top-0 left-0 h-1.5 bg-pink-500 transition-all duration-1000" id="timer-bar" style="width: 100%;"></div>
+
+                <p class="text-xs text-pink-500 font-bold tracking-wider" id="flash-context">空港・チェックイン</p>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed min-h-[50px] flex items-center justify-center" id="flash-jp">
+                    窓側の席に変更してもらうことはできますか？
+                </h2>
+
+                <!-- Speech Voice Input Area -->
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                    <div class="flex justify-center items-center space-x-2">
+                        <button onclick="toggleSpeechRecognition('flash')" id="flash-mic-btn" class="bg-pink-500 text-white font-bold px-5 py-2.5 rounded-full shadow-md flex items-center space-x-2 hover:bg-pink-600 transition-all text-sm">
+                            <i class="fa-solid fa-microphone"></i>
+                            <span id="flash-mic-status">声に出して答える</span>
+                        </button>
+                    </div>
+                    <!-- Speech Output Text -->
+                    <div id="flash-user-speech-box" class="min-h-[38px] bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 font-medium flex items-center justify-center italic">
+                        <span id="flash-user-speech-text" class="not-italic text-slate-400">マイクボタンを押して英語で話してください</span>
+                    </div>
+                </div>
+
+                <!-- Hidden Answer / Hint Section -->
+                <div id="flash-answer-container" class="hidden pt-2 border-t border-slate-100 space-y-3">
+                    <!-- Evaluation Result Badge -->
+                    <div id="flash-eval-badge" class="hidden py-1 px-3 rounded-full text-xs font-bold inline-block"></div>
+
+                    <div>
+                        <div class="flex items-center justify-center space-x-2">
+                            <span class="text-xs text-slate-400 font-bold">模範解答</span>
+                            <button onclick="speakText()" class="text-pink-500 hover:text-pink-600 text-xs"><i class="fa-solid fa-volume-high"></i></button>
+                        </div>
+                        <p class="text-lg font-bold text-pink-600 mt-0.5" id="flash-en">Could I change to a window seat, please?</p>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl text-xs text-slate-600 text-left space-y-1">
+                        <p id="flash-tip"><i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> 丁寧にお願いするときは "Could I ~ ?" や "Is it possible to ~ ?" がパッと出ると自然です。</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="pt-2">
+                    <button id="btn-show-answer" onclick="showFlashAnswer()" class="w-full bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-pink-200 transition-all text-base active:scale-95">
+                        答え合わせ・判定 (Space)
+                    </button>
+                    <div id="btn-next-group" class="hidden grid grid-cols-2 gap-3">
+                        <button onclick="recordAnswer(false)" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-2xl transition-all text-sm">
+                            <i class="fa-solid fa-xmark mr-1 text-rose-500"></i> もう一歩
+                        </button>
+                        <button onclick="recordAnswer(true)" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-2xl shadow-md transition-all text-sm">
+                            <i class="fa-solid fa-check mr-1"></i> 言えた！
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Audio Playback -->
+            <div class="flex justify-center">
+                <button onclick="speakText()" class="text-xs text-slate-500 hover:text-pink-600 font-bold bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm flex items-center">
+                    <i class="fa-solid fa-volume-high text-pink-500 mr-1.5"></i> 模範解答の音声を聞く
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= ROLEPLAY MODE ================= -->
+        <section id="mode-roleplay" class="space-y-4 hidden">
+
+            <div class="bg-white rounded-3xl p-6 border border-pink-100 card-shadow space-y-4">
+                <!-- Situation Header -->
+                <div class="bg-pink-50 p-3 rounded-2xl flex items-center space-x-3 border border-pink-100">
+                    <div class="bg-pink-500 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg" id="rp-icon">
+                        <i class="fa-solid fa-mug-hot"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-800" id="rp-title">カフェでの一コマ</h3>
+                        <p class="text-xs text-slate-500" id="rp-desc">店員に「店内でお召し上がりですか？」と聞かれました。</p>
+                    </div>
+                </div>
+
+                <!-- Chat Bubble AI -->
+                <div class="space-y-2">
+                    <p class="text-xs text-slate-400 font-bold">相手の言葉 (AI)</p>
+                    <div class="bg-slate-100 p-4 rounded-2xl rounded-tl-none font-bold text-slate-800 text-base flex justify-between items-center">
+                        <span id="rp-prompt">Is that for here or to go?</span>
+                        <button onclick="speakPrompt()" class="text-pink-500 hover:text-pink-600"><i class="fa-solid fa-volume-high"></i></button>
+                    </div>
+                </div>
+
+                <!-- Your Response Area -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <p class="text-xs text-slate-400 font-bold">あなたの返し（声またはタイピング）</p>
+                        <span class="text-xs text-pink-500 font-bold cursor-pointer" id="rp-hint-toggle" onclick="toggleRPHint()">ヒントを表示</span>
+                    </div>
+
+                    <!-- Hint Box -->
+                    <div id="rp-hint-box" class="hidden bg-amber-50 border border-amber-100 p-3 rounded-xl text-xs text-amber-800">
+                        ヒント: 「持ち帰りでお願いします。それと袋ももらえますか？」と返してみましょう。
+                    </div>
+
+                    <!-- Mic / Speech Input -->
+                    <div class="relative">
+                        <input type="text" id="rp-user-input" placeholder="マイクを押して話すか、文字を入力..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-pink-500 transition-all font-medium">
+                        <button onclick="toggleSpeechRecognition('roleplay')" id="rp-mic-btn" class="absolute right-2 top-2 w-8 h-8 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center hover:bg-pink-200 transition-all">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feedback Area -->
+                <div id="rp-feedback" class="hidden space-y-3 pt-2">
+                    <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs text-emerald-800 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <p class="font-bold text-sm flex items-center">
+                                <i class="fa-solid fa-circle-check text-emerald-500 mr-1.5"></i> 模範解答例:
+                            </p>
+                            <button onclick="speakSampleAnswer()" class="text-emerald-600 hover:text-emerald-700 font-bold"><i class="fa-solid fa-volume-high"></i></button>
+                        </div>
+                        <p class="text-sm font-bold text-slate-800 mt-1" id="rp-sample-ans">To go, please. And could I get a paper bag?</p>
+                        <p class="text-slate-600 mt-2" id="rp-explanation">ポイント: 「テイクアウト」は英語で "to go" が一般的です。語尾に "please" を添えると丁寧です。</p>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button id="rp-action-btn" onclick="checkRPAnswer()" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3.5 rounded-2xl shadow-md transition-all text-sm">
+                    回答をチェックする
+                </button>
+            </div>
+
+        </section>
+
+        <!-- Completion Modal / Toast -->
+        <div id="completion-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-xl">
+                <div class="text-5xl">🎉</div>
+                <h3 class="text-xl font-bold text-slate-800">本日の5問達成！</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    お疲れ様でした！今日のターゲット5問を全てクリアしました。明日また新しい問題が追加されます。
+                </p>
+                <button onclick="closeCompletionModal()" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-2xl">
+                    もう一度復習する
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ================= FULL QUESTION POOL =================
+        const QUESTION_POOL = {
+            travel: {
+                flash: [
+                    { jp: "窓側の席に変更してもらうことはできますか？", en: "Could I change to a window seat, please?", keywords: ["window", "seat", "change", "could"], tip: "Could I ~? を使うと一歩上質の丁寧さになります。", level: "A2-B1", context: "飛行機・チェックイン" },
+                    { jp: "荷物をホテルに預けておくことは可能ですか？", en: "Is it possible to leave my luggage here?", keywords: ["possible", "leave", "luggage"], tip: "Is it possible to ~? はB1へのステップアップに必須の構文です。", level: "B1", context: "ホテル・フロント" },
+                    { jp: "おすすめのローカル料理はありますか？", en: "Do you have any recommendations for local dishes?", keywords: ["recommendations", "local", "dishes"], tip: "recommendation（おすすめ）をサッと使えると便利です。", level: "A2-B1", context: "観光案内所" },
+                    { jp: "すみません、チェックアウトの時間を遅らせることはできますか？", en: "Is a late check-out possible?", keywords: ["late", "check-out", "possible"], tip: "Late check-out はそのまま名詞として使えます。", level: "B1", context: "ホテル" },
+                    { jp: "タクシーを1台呼んでいただけますか？", en: "Could you call a taxi for me, please?", keywords: ["call", "taxi", "could"], tip: "Could you ~ for me? で「私のために〜してくれますか」と頼めます。", level: "A2", context: "ホテル・レセプション" },
+                    { jp: "搭乗口は何番ですか？", en: "Which gate should I go to?", keywords: ["gate", "which", "go"], tip: "Which gate ~? で迷わず搭乗口を確認できます。", level: "A2", context: "空港" },
+                    { jp: "Wi-Fiのパスワードを教えていただけますか？", en: "Could you give me the Wi-Fi password?", keywords: ["wifi", "password", "give"], tip: "Could you give me ~? は超便利フレーズです。", level: "A2", context: "カフェ・ホテル" },
+                    { jp: "市街地まではどうやって行けばいいですか？", en: "How can I get to the city center?", keywords: ["how", "get", "city", "center"], tip: "How can I get to [場所]? は道案内の基本表現です。", level: "B1", context: "空港インフォメーション" },
+                    { jp: "この近くに薬局はありますか？", en: "Is there a pharmacy around here?", keywords: ["pharmacy", "around", "there"], tip: "Is there [場所] around here? で周辺情報を探せます。", level: "A2", context: "街中" },
+                    { jp: "領収書をいただけますか？", en: "Could I have a receipt, please?", keywords: ["receipt", "have", "could"], tip: "receipt の p は発音せず「リシート」となります。", level: "A2-B1", context: "精算" }
+                ],
+                roleplay: [
+                    { title: "空港でのセキュリティチェック", desc: "「PCをバッグから出してください」と言われました。", prompt: "Please take your laptop out of your bag.", hint: "「わかりました。これだけで大丈夫ですか？」と返してみましょう。", sample: "Sure. Is this all I need to take out?", explanation: "Is this all...? (これで全部ですか？) は便利表現です。" },
+                    { title: "ホテルの部屋で", desc: "フロントに電話して「エアコンの使い方がわかりません」と伝えます。", prompt: "Front desk, how can I help you?", hint: "「部屋のエアコンの使い方がわかりません」と伝えます。", sample: "Hi, I'm not sure how to use the air conditioner in my room.", explanation: "I'm not sure how to use... で「使い方がわからない」を品良く伝えられます。" },
+                    { title: "入国審査", desc: "「滞在目的は何ですか？」と聞かれました。", prompt: "What's the purpose of your visit?", hint: "「観光です。5日間滞在します」と答えましょう。", sample: "Sightseeing. I'll be here for five days.", explanation: "単語で Sightseeing と言った後、滞在期間を添えると完璧です。" },
+                    { title: "タクシーの車内", desc: "運転手から「どちらまで行きますか？」と尋ねられました。", prompt: "Where are you heading today?", hint: "「この住所までお願いします」と伝えましょう。", sample: "To this address, please.", explanation: "スマホの画面を見せながら To this address と言えば確実です。" },
+                    { title: "レストラン", desc: "「ご予約はされていますか？」と聞かれました。", prompt: "Do you have a reservation?", hint: "「いいえ、していません。2人入れますか？」と聞きます。", sample: "No, we don't. Do you have a table for two?", explanation: "Table for two? (2人いけますか？) は超頻出フレーズです。" }
+                ]
+            },
+            shopping: {
+                flash: [
+                    { jp: "これのMサイズを着てみてもいいですか？", en: "Could I try this on in a medium?", keywords: ["try", "medium", "could"], tip: "試着する ＝ try on。サイズは in a medium と言います。", level: "A2", context: "アパレル" },
+                    { jp: "もう少し安いものはありますか？", en: "Do you have anything a bit less expensive?", keywords: ["less", "expensive", "anything"], tip: "less expensive の方が cheaper より上品です。", level: "B1", context: "買い物" },
+                    { jp: "袋をもう1枚いただけますか？", en: "Could I get an extra bag, please?", keywords: ["extra", "bag", "get"], tip: "extra（追加の）をサッと使えると自然です。", level: "A2-B1", context: "カフェ" },
+                    { jp: "カードで支払えますか？", en: "Can I pay by credit card?", keywords: ["pay", "card", "credit"], tip: "pay by card や pay with card と言います。", level: "A2", context: "レジ" },
+                    { jp: "これの色違いはありますか？", en: "Does this come in any other colors?", keywords: ["come", "other", "colors"], tip: "Does this come in ~ ? はアパレルで超必須フレーズです。", level: "B1", context: "アパレル" },
+                    { jp: "ただ見ているだけです、ありがとうございます。", en: "I'm just browsing, thank you.", keywords: ["browsing", "just"], tip: "店員に話しかけられた時のスマートな断り文句です。", level: "A2-B1", context: "ショップ" },
+                    { jp: "ギフト用にラッピングしてもらえますか？", en: "Could you gift wrap this, please?", keywords: ["gift", "wrap", "could"], tip: "gift wrap で「プレゼント包装する」という意味になります。", level: "B1", context: "ギフトショップ" },
+                    { jp: "持ち帰りでお願いします。", en: "To go, please.", keywords: ["go", "please"], tip: "テイクアウトはアメリカ英語で To go と言います。", level: "A2", context: "カフェ" },
+                    { jp: "免税手続きはできますか？", en: "Is tax-free shopping available here?", keywords: ["tax-free", "available"], tip: "Is ~ available? で「サービスが利用可能か」確認できます。", level: "B1", context: "免税店" },
+                    { jp: "これを返品することは可能ですか？", en: "Is it possible to return this?", keywords: ["possible", "return"], tip: "Is it possible to return...? で返品の確認ができます。", level: "B1", context: "カスタマーサービス" }
+                ],
+                roleplay: [
+                    { title: "カフェでの注文", desc: "「お飲み物のサイズはいかがなさいますか？」と聞かれました。", prompt: "What size would you like for your drink?", hint: "「アイスのMサイズで、氷少なめでお願いします」と答えましょう。", sample: "Medium iced latte, with easy ice please.", explanation: "氷少なめは easy ice や light ice と表現します。" },
+                    { title: "レジでの会話", desc: "「お会計はご一緒ですか、別々ですか？」と聞かれました。", prompt: "Will this be all together or separate?", hint: "「別々でお願いします」と答えましょう。", sample: "Separate, please.", explanation: "Separate, please. の一言でスマートに通じます。" },
+                    { title: "洋服店で", desc: "「いかがですか？サイズは合いますか？」と聞かれました。", prompt: "How is the size fitting on you?", hint: "「少しきついです。ワンサイズ大きいものはありますか？」と返しましょう。", sample: "It's a bit tight. Do you have one size larger?", explanation: "one size larger で「ワンサイズ上のもの」になります。" },
+                    { title: "スーパーのレジ", desc: "「レジ袋はお持ちですか？」と聞かれました。", prompt: "Do you bring your own bag?", hint: "「いいえ、1枚買えますか？」と伝えましょう。", sample: "No, could I buy one, please?", explanation: "Could I buy one? でスムーズに袋を追加できます。" },
+                    { title: "お土産店", desc: "「プレゼント用ですか？」と聞かれました。", prompt: "Is this a gift for someone?", hint: "「はい、個別に包んでもらえますか？」と頼みましょう。", sample: "Yes, could you wrap them separately?", explanation: "separately（個別に）を入れると丁寧な指示になります。" }
+                ]
+            },
+            smalltalk: {
+                flash: [
+                    { jp: "どのくらい日本に滞在される予定ですか？", en: "How long are you planning to stay in Japan?", keywords: ["planning", "stay", "how", "long"], tip: "be planning to ~ で「〜する予定ですか？」と尋ねられます。", level: "B1", context: "雑談" },
+                    { jp: "普段は週末に何をして過ごすのが好きですか？", en: "What do you usually like to do on weekends?", keywords: ["usually", "like", "weekends"], tip: "会話を広げる鉄板の質問です。", level: "A2-B1", context: "趣味" },
+                    { jp: "最近、何か面白い映画見ましたか？", en: "Have you seen any good movies lately?", keywords: ["seen", "movies", "lately"], tip: "Have you ~ lately?（最近〜しましたか？）はB1で大活躍します。", level: "B1", context: "雑談" },
+                    { jp: "お仕事は何をされているんですか？", en: "What do you do for a living?", keywords: ["what", "do", "living"], tip: "What do you do? よりも親切で丁寧な聞き方です。", level: "B1", context: "自己紹介" },
+                    { jp: "どちらのご出身ですか？", en: "Whereabouts are you from?", keywords: ["whereabouts", "from"], tip: "Where are you from? よりも「どの辺り？」とこなれた聞き方です。", level: "B1", context: "初対面" },
+                    { jp: "日本に来るのは初めてですか？", en: "Is this your first time in Japan?", keywords: ["first", "time", "japan"], tip: "旅行者とのアイスブレイクに最適です。", level: "A2", context: "雑談" },
+                    { jp: "連絡先を交換しませんか？", en: "Would you like to exchange contacts?", keywords: ["exchange", "contacts", "would"], tip: "Would you like to ~? で丁寧に提案できます。", level: "B1", context: "別れ際" },
+                    { jp: "ご家族によろしくお伝えください。", en: "Please say hello to your family for me.", keywords: ["say", "hello", "family"], tip: "別れ際の温かい決まり文句です。", level: "B1", context: "挨拶" },
+                    { jp: "時差ぼけは大丈夫ですか？", en: "How are you handling the jet lag?", keywords: ["handling", "jet", "lag"], tip: "jet lag（時差ぼけ）を気遣う表現です。", level: "B1", context: "旅行者との雑談" },
+                    { jp: "良い一日をお過ごしください！", en: "Have a wonderful rest of the day!", keywords: ["wonderful", "rest", "day"], tip: "Have a good day より少し温かみのある表現です。", level: "A2-B1", context: "挨拶" }
+                ],
+                roleplay: [
+                    { title: "天気についての雑談", desc: "「今日は本当に良い天気ですね！週末は何をする予定ですか？」", prompt: "Beautiful day, isn't it! Do you have any plans for the weekend?", hint: "「本当にそうですね！公園を散歩しようと思っています」", sample: "It really is! I'm planning to take a walk in the park.", explanation: "It really is! と同調してから自分の予定を言うのが自然です。" },
+                    { title: "趣味の話題", desc: "「余暇の時間はどんなことをして過ごしていますか？」", prompt: "What do you enjoy doing in your free time?", hint: "「カフェで本を読むのが好きです」", sample: "I enjoy reading books at cozy cafes.", explanation: "I enjoy -ing... は趣味を語る時の王道表現です。" },
+                    { title: "出身地の話", desc: "「お里はどのへんなんですか？」", prompt: "Where did you grow up?", hint: "「東京の近くの小さな町で育ちました」", sample: "I grew up in a small town near Tokyo.", explanation: "I grew up in... (〜で育ちました) は自己紹介でとても便利です。" },
+                    { title: "食べ物の話", desc: "「和食はお好きですか？」", prompt: "How do you like Japanese food?", hint: "「大好きです！特に寿司とラーメンが好きです」", sample: "I love it! Especially sushi and ramen.", explanation: "Especially...（特に〜）を使うと具体例を添えられます。" },
+                    { title: "仕事・近況", desc: "「最近仕事の調子はどうですか？」", prompt: "How have things been going at work?", hint: "「結構忙しいですが、うまくいっています！」", sample: "Pretty busy, but everything is going well!", explanation: "Pretty busy (結構忙しい) などのリアルな感想を入れるとB1らしくなります。" }
+                ]
+            }
+        };
+
+        // ================= STATE =================
+        let currentMode = 'flash'; // 'flash' or 'roleplay'
+        let currentCategory = 'travel';
+        let currentIndex = 0; // 0 to 4
+        let streak = 0;
+        let timerInterval = null;
+        let timeLeft = 5;
+        let isAutoSpeechOn = true;
+        let userRecordedText = "";
+
+        // Daily Selected 5 Questions
+        let dailyQuestions = {
+            travel: { flash: [], roleplay: [] },
+            shopping: { flash: [], roleplay: [] },
+            smalltalk: { flash: [], roleplay: [] }
+        };
+
+        // ================= INIT =================
+        window.onload = function() {
+            initDailyQuestions();
+            updateDateDisplay();
+            loadQuestion();
+            
+            // Key listeners
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && currentMode === 'flash') {
+                    e.preventDefault();
+                    const showBtn = document.getElementById('btn-show-answer');
+                    if (!showBtn.classList.contains('hidden')) {
+                        showFlashAnswer();
+                    }
+                }
+            });
+        };
+
+        function initDailyQuestions() {
+            const today = new Date();
+            const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+
+            ['travel', 'shopping', 'smalltalk'].forEach(cat => {
+                ['flash', 'roleplay'].forEach(mode => {
+                    const pool = QUESTION_POOL[cat][mode];
+                    dailyQuestions[cat][mode] = getDaily5FromPool(pool, seed);
+                });
+            });
+        }
+
+        function getDaily5FromPool(pool, seed) {
+            let shuffled = [...pool];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(((seed * (i + 1) * 9301 + 49297) % 233280) / 233280 * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled.slice(0, 5);
+        }
+
+        function updateDateDisplay() {
+            const now = new Date();
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日(${days[now.getDay()]})`;
+            document.getElementById('today-date').innerText = dateStr;
+        }
+
+        function toggleAutoSpeech() {
+            isAutoSpeechOn = !isAutoSpeechOn;
+            const icon = document.getElementById('speech-icon');
+            const text = document.getElementById('speech-text');
+            const btn = document.getElementById('toggle-speech');
+
+            if (isAutoSpeechOn) {
+                icon.className = "fa-solid fa-volume-high";
+                text.innerText = "自動音声 ON";
+                btn.className = "flex items-center space-x-1.5 bg-pink-50 text-pink-600 px-2.5 py-1 rounded-full border border-pink-200 hover:bg-pink-100 transition-all";
+            } else {
+                icon.className = "fa-solid fa-volume-xmark";
+                text.innerText = "自動音声 OFF";
+                btn.className = "flex items-center space-x-1.5 bg-slate-100 text-slate-400 px-2.5 py-1 rounded-full border border-slate-200 hover:bg-slate-200 transition-all";
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        // ================= NAVIGATION =================
+        function switchMode(mode) {
+            currentMode = mode;
+            currentIndex = 0;
+
+            document.getElementById('mode-flash').classList.toggle('hidden', mode !== 'flash');
+            document.getElementById('mode-roleplay').classList.toggle('hidden', mode !== 'roleplay');
+
+            document.getElementById('tab-flash').className = mode === 'flash' 
+                ? "py-2.5 text-center rounded-xl font-bold text-sm transition-all bg-white text-pink-600 shadow-sm"
+                : "py-2.5 text-center rounded-xl font-bold text-sm transition-all text-slate-600 hover:text-pink-600";
+
+            document.getElementById('tab-roleplay').className = mode === 'roleplay' 
+                ? "py-2.5 text-center rounded-xl font-bold text-sm transition-all bg-white text-pink-600 shadow-sm"
+                : "py-2.5 text-center rounded-xl font-bold text-sm transition-all text-slate-600 hover:text-pink-600";
+
+            loadQuestion();
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            currentIndex = 0;
+
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('border-pink-400', 'bg-pink-50', 'text-pink-700');
+                btn.classList.add('border-transparent', 'bg-white', 'text-slate-600');
+            });
+
+            const activeBtn = document.getElementById(`cat-${cat}`);
+            activeBtn.classList.remove('border-transparent', 'bg-white', 'text-slate-600');
+            activeBtn.classList.add('border-pink-400', 'bg-pink-50', 'text-pink-700');
+
+            loadQuestion();
+        }
+
+        // ================= FLASH MODE LOGIC =================
+        function loadQuestion() {
+            clearInterval(timerInterval);
+            userRecordedText = "";
+
+            document.getElementById('daily-progress-text').innerText = `${currentIndex + 1} / 5 問目`;
+
+            if (currentMode === 'flash') {
+                const list = dailyQuestions[currentCategory].flash;
+                const q = list[currentIndex];
+
+                document.getElementById('flash-context').innerText = q.context;
+                document.getElementById('flash-jp').innerText = q.jp;
+                document.getElementById('flash-en').innerText = q.en;
+                document.getElementById('flash-tip').innerHTML = `<i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> ${q.tip}`;
+                document.getElementById('level-badge').innerText = `Level ${q.level}`;
+
+                // Reset Speech Input UI
+                document.getElementById('flash-user-speech-text').innerText = "マイクボタンを押して英語で話してください";
+                document.getElementById('flash-user-speech-text').className = "not-italic text-slate-400";
+                document.getElementById('flash-eval-badge').classList.add('hidden');
+
+                // Reset UI
+                document.getElementById('flash-answer-container').classList.add('hidden');
+                document.getElementById('btn-show-answer').classList.remove('hidden');
+                document.getElementById('btn-next-group').classList.add('hidden');
+
+                // Timer setup
+                timeLeft = 5;
+                updateTimerDisplay();
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        showFlashAnswer();
+                    }
+                }, 1000);
+
+            } else {
+                // Roleplay Mode
+                const list = dailyQuestions[currentCategory].roleplay;
+                const q = list[currentIndex];
+
+                document.getElementById('rp-title').innerText = q.title;
+                document.getElementById('rp-desc').innerText = q.desc;
+                document.getElementById('rp-prompt').innerText = q.prompt;
+                document.getElementById('rp-hint-box').innerText = q.hint;
+                document.getElementById('rp-sample-ans').innerText = q.sample;
+                document.getElementById('rp-explanation').innerText = q.explanation;
+
+                document.getElementById('rp-user-input').value = '';
+                document.getElementById('rp-feedback').classList.add('hidden');
+                document.getElementById('rp-hint-box').classList.add('hidden');
+                document.getElementById('rp-action-btn').innerText = "回答をチェックする";
+                document.getElementById('rp-action-btn').onclick = checkRPAnswer;
+
+                if (isAutoSpeechOn) {
+                    speakTextCustom(q.prompt);
+                }
+            }
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById('timer-display').innerText = timeLeft;
+            const percentage = (timeLeft / 5) * 100;
+            document.getElementById('timer-bar').style.width = `${percentage}%`;
+        }
+
+        function showFlashAnswer() {
+            clearInterval(timerInterval);
+            document.getElementById('flash-answer-container').classList.remove('hidden');
+            document.getElementById('btn-show-answer').classList.add('hidden');
+            document.getElementById('btn-next-group').classList.remove('hidden');
+            
+            // Speech evaluation
+            evaluateFlashSpeech();
+
+            if (isAutoSpeechOn) {
+                speakText();
+            }
+        }
+
+        function evaluateFlashSpeech() {
+            const badge = document.getElementById('flash-eval-badge');
+            badge.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-700', 'bg-amber-100', 'text-amber-700', 'bg-slate-100', 'text-slate-600');
+
+            if (!userRecordedText) {
+                badge.classList.add('bg-slate-100', 'text-slate-600');
+                badge.innerText = "音声未入力（声に出す練習をしてみましょう！）";
+                return;
+            }
+
+            const q = dailyQuestions[currentCategory].flash[currentIndex];
+            const lowerUserText = userRecordedText.toLowerCase();
+            const matchedKeywords = q.keywords.filter(kw => lowerUserText.includes(kw.toLowerCase()));
+
+            if (matchedKeywords.length >= 2 || lowerUserText === q.en.toLowerCase()) {
+                badge.classList.add('bg-emerald-100', 'text-emerald-700');
+                badge.innerText = "✨ Perfect! 素晴らしい応答です！";
+            } else if (matchedKeywords.length >= 1) {
+                badge.classList.add('bg-amber-100', 'text-amber-700');
+                badge.innerText = "👍 Good! 伝わる表現です！";
+            } else {
+                badge.classList.add('bg-slate-100', 'text-slate-600');
+                badge.innerText = "💪 もう一歩！模範フレーズを声に出してみましょう";
+            }
+        }
+
+        function recordAnswer(success) {
+            if (success) {
+                streak++;
+            } else {
+                streak = 0;
+            }
+            document.getElementById('streak-counter').innerHTML = `<i class="fa-solid fa-fire text-amber-500 mr-1"></i>${streak} 連続`;
+
+            currentIndex++;
+            if (currentIndex >= 5) {
+                currentIndex = 0;
+                document.getElementById('completion-modal').classList.remove('hidden');
+            } else {
+                loadQuestion();
+            }
+        }
+
+        function closeCompletionModal() {
+            document.getElementById('completion-modal').classList.add('hidden');
+            loadQuestion();
+        }
+
+        // ================= ROLEPLAY LOGIC =================
+        function toggleRPHint() {
+            const hintBox = document.getElementById('rp-hint-box');
+            hintBox.classList.toggle('hidden');
+        }
+
+        function checkRPAnswer() {
+            document.getElementById('rp-feedback').classList.remove('hidden');
+            const btn = document.getElementById('rp-action-btn');
+            
+            if (isAutoSpeechOn) {
+                speakSampleAnswer();
+            }
+
+            btn.innerText = "次の問題へ";
+            btn.onclick = () => {
+                currentIndex++;
+                if (currentIndex >= 5) {
+                    currentIndex = 0;
+                    document.getElementById('completion-modal').classList.remove('hidden');
+                } else {
+                    loadQuestion();
+                }
+            };
+        }
+
+        // ================= AUDIO & SPEECH =================
+        function speakText() {
+            const text = document.getElementById('flash-en').innerText;
+            speakTextCustom(text);
+        }
+
+        function speakPrompt() {
+            const text = document.getElementById('rp-prompt').innerText;
+            speakTextCustom(text);
+        }
+
+        function speakSampleAnswer() {
+            const text = document.getElementById('rp-sample-ans').innerText;
+            speakTextCustom(text);
+        }
+
+        function speakTextCustom(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Speech Recognition Engine
+        let recognition = null;
+        function toggleSpeechRecognition(mode) {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('お使いのブラウザは音声認識に対応していません。ChromeまたはSafariをご利用ください。');
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (recognition) {
+                recognition.stop();
+                recognition = null;
+                resetMicUI(mode);
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = true;
+
+            const micBtn = mode === 'flash' ? document.getElementById('flash-mic-btn') : document.getElementById('rp-mic-btn');
+            const micStatus = mode === 'flash' ? document.getElementById('flash-mic-status') : null;
+
+            recognition.onstart = () => {
+                micBtn.classList.add('bg-red-500', 'pulse-mic');
+                if (micStatus) micStatus.innerText = "録音中... 話してください";
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = Array.from(event.results)
+                    .map(result => result[0].transcript)
+                    .join('');
+
+                if (mode === 'flash') {
+                    userRecordedText = transcript;
+                    const speechBox = document.getElementById('flash-user-speech-text');
+                    speechBox.innerText = `"${transcript}"`;
+                    speechBox.className = "not-italic text-slate-800 font-bold text-sm";
+                } else {
+                    document.getElementById('rp-user-input').value = transcript;
+                }
+            };
+
+            recognition.onerror = () => {
+                resetMicUI(mode);
+                recognition = null;
+            };
+
+            recognition.onend = () => {
+                resetMicUI(mode);
+                recognition = null;
+            };
+
+            recognition.start();
+        }
+
+        function resetMicUI(mode) {
+            if (mode === 'flash') {
+                const micBtn = document.getElementById('flash-mic-btn');
+                micBtn.classList.remove('bg-red-500', 'pulse-mic');
+                document.getElementById('flash-mic-status').innerText = "声に出して答える";
+            } else {
+                const micBtn = document.getElementById('rp-mic-btn');
+                micBtn.classList.remove('bg-red-500', 'pulse-mic');
+            }
+        }
+    </script>
+</body>
+</html>
